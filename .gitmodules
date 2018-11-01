@@ -1,0 +1,6 @@
+[submodule "components/idf-simple-spi"]
+	path = components/idf-simple-spi
+	url = https://github.com/ericogr/idf-simple-spi
+[submodule "components/idf-rfid"]
+	path = components/idf-rfid
+	url = https://github.com/ericogr/idf-rfid
