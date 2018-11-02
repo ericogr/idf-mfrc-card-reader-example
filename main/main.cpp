@@ -13,20 +13,12 @@ void searchNewCard(void * pvParameters)
 {
     ESP_LOGI(TAG, "Check for new card");
 
-    gpio_set_direction((gpio_num_t)0, GPIO_MODE_OUTPUT);
-    gpio_set_direction((gpio_num_t)2, GPIO_MODE_OUTPUT);
-    gpio_set_direction((gpio_num_t)4, GPIO_MODE_OUTPUT);
-
-    gpio_set_level((gpio_num_t)0, 0);
-    gpio_set_level((gpio_num_t)2, 0);
-    gpio_set_level((gpio_num_t)4, 0);
-
     for( ;; )
     {
         bool haveCard = _MFRC522.PICC_IsNewCardPresent();
 
         if (haveCard && _MFRC522.PICC_ReadCardSerial()) {
-            ESP_LOGI(TAG, "CARD UID: %dx%dx%dx%d.", _MFRC522.uid.uidByte[0], _MFRC522.uid.uidByte[1], _MFRC522.uid.uidByte[2], _MFRC522.uid.uidByte[3]);
+            _MFRC522.PICC_DumpDetailsToSerial(&_MFRC522.uid);
 
             if (_MFRC522.uid.uidByte[0] == 214 && _MFRC522.uid.uidByte[1] == 173 && _MFRC522.uid.uidByte[2] == 167 && _MFRC522.uid.uidByte[3] == 197) {
                 gpio_set_level((gpio_num_t)0, 0);
@@ -50,16 +42,33 @@ extern "C" {
     void app_main()
     {
         ESP_LOGI(TAG, "Iniciando...");
+
+        gpio_set_direction((gpio_num_t)0, GPIO_MODE_OUTPUT);
+        gpio_set_direction((gpio_num_t)2, GPIO_MODE_OUTPUT);
+        gpio_set_direction((gpio_num_t)4, GPIO_MODE_OUTPUT);
+
+        gpio_set_level((gpio_num_t)0, 0);
+        gpio_set_level((gpio_num_t)2, 0);
+        gpio_set_level((gpio_num_t)4, 0);
+
         ESP_ERROR_CHECK(
             _SPI.init(5)
         );
 
-        _MFRC522.PCD_Init();
-        _MFRC522.PCD_DumpVersionToSerial();
-        uint8_t antennaGain = _MFRC522.PCD_GetAntennaGain();
+        if (_MFRC522.PCD_PerformSelfTest()) {
+            ESP_LOGI(TAG, "Self test OK");
 
-        ESP_LOGI(TAG, "Antenna gain: [%d].", antennaGain);
+            _MFRC522.PCD_Init();
+            _MFRC522.PCD_DumpVersionToSerial();
 
-        xTaskCreate(searchNewCard, "searchNewCard", 5000, NULL, tskIDLE_PRIORITY, NULL);
+            uint8_t antennaGain = _MFRC522.PCD_GetAntennaGain();
+
+            ESP_LOGI(TAG, "Antenna gain: [%d].", antennaGain);
+
+            xTaskCreate(searchNewCard, "searchNewCard", 5000, NULL, tskIDLE_PRIORITY, NULL);
+        }
+        else {
+            ESP_LOGI(TAG, "Self test ERROR");
+        }
     }
 }
