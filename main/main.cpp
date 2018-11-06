@@ -11,7 +11,7 @@ MFRC522 _MFRC522(&_SPI, 22);
 
 void searchNewCard(void * pvParameters)
 {
-    ESP_LOGI(TAG, "Check for new card");
+    ESP_LOGI(TAG, "Searching card...");
 
     for( ;; )
     {
@@ -30,6 +30,42 @@ void searchNewCard(void * pvParameters)
                 gpio_set_level((gpio_num_t)2, 0);
                 gpio_set_level((gpio_num_t)4, 0);
             }
+
+            uint8_t block = 1;
+            MFRC522::MIFARE_Key key;
+            MFRC522::StatusCode status;
+            uint8_t buffer[16];// = "Jose Silva";
+            for (uint8_t i = 0; i < 6; i++) key.keyByte[i] = 0xFF;
+            status = _MFRC522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, block, &key, &(_MFRC522.uid));
+
+            if (status != MFRC522::STATUS_OK) {
+                ESP_LOGI(TAG, "PCD_Authenticate() failed: %s", _MFRC522.GetStatusCodeName(status));
+            }
+            else {
+                //write
+                // ESP_LOGI(TAG, "PCD_Authenticate() success!");
+                //
+                // status = _MFRC522.MIFARE_Write(block, buffer, 16);
+                // if (status != MFRC522::STATUS_OK) {
+                //     ESP_LOGI(TAG, "MIFARE_Write() failed: %s", _MFRC522.GetStatusCodeName(status));
+                // }
+                // else {
+                //     ESP_LOGI(TAG, "MIFARE_Write() success");
+                // }
+
+                //read
+                uint8_t len = 18;
+                status = _MFRC522.MIFARE_Read(block, buffer, &len);
+                if (status != MFRC522::STATUS_OK) {
+                    ESP_LOGI(TAG, "Reading failed: %s", _MFRC522.GetStatusCodeName(status));
+                }
+                else {
+                    ESP_LOGI(TAG, "Reading data: %s", buffer);
+                }
+
+                _MFRC522.PICC_HaltA();
+                _MFRC522.PCD_StopCrypto1();
+            }
         }
 
         vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -41,7 +77,7 @@ void searchNewCard(void * pvParameters)
 extern "C" {
     void app_main()
     {
-        ESP_LOGI(TAG, "Iniciando...");
+        ESP_LOGI(TAG, "Starting...");
 
         gpio_set_direction((gpio_num_t)0, GPIO_MODE_OUTPUT);
         gpio_set_direction((gpio_num_t)2, GPIO_MODE_OUTPUT);
