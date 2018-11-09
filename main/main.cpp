@@ -6,8 +6,8 @@
 
 static const char* TAG = "cardreader";
 
-SPI _SPI(VSPI_HOST);
-MFRC522 _MFRC522(&_SPI, 22);
+SPI _SPI(HSPI_HOST);
+MFRC522 _MFRC522(&_SPI, 27);
 
 void searchNewCard(void * pvParameters)
 {
@@ -88,7 +88,7 @@ extern "C" {
         gpio_set_level((gpio_num_t)4, 0);
 
         ESP_ERROR_CHECK(
-            _SPI.init(5)
+            _SPI.init(15)
         );
 
         if (_MFRC522.PCD_PerformSelfTest()) {
